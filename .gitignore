@@ -161,3 +161,4 @@ cython_debug/
 
 /assets
 requirements_draft.txt
+.DS_Store
