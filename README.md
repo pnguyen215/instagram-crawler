@@ -18,6 +18,10 @@ Instagram Crawler is a Python script that uses the `instaloader` module to downl
    ```bash
    pip3 install -r requirements.txt
    ```
+3. Upgrade the required Python modules:
+   ```bash
+   pip3 install --upgrade -r requirements.txt
+   ```
 
 ## Usage
 
