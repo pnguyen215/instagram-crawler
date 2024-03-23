@@ -36,7 +36,10 @@ class InstagramCrawler:
         files = [f for f in os.listdir(self.username) if f.endswith(file_extension)]
         for file in files:
             try:
-                shutil.move(os.path.join(self.username, file), target_dir)
+                src = os.path.join(self.username, file)
+                dst = os.path.join(target_dir, file)
+                if not os.path.exists(dst):
+                    shutil.move(src, dst)
             except FileNotFoundError:
                 self.logger.error("File %s not found, skipping.", file)
             except Exception as e:
@@ -57,6 +60,15 @@ class InstagramCrawler:
         shutil.rmtree(self.username)
 
 
+def is_docker():
+    path = "/proc/self/cgroup"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.path.isfile(path)
+        and any("docker" in line for line in open(path))
+    )
+
+
 def main(username, filename_logger):
     logger = Logger(filename_logger)
     logger.logger.info("Loading username %s profile...", username)
@@ -67,6 +79,9 @@ def main(username, filename_logger):
 
 
 if __name__ == "__main__":
-    username = input("Enter Instagram's username: ")
+    if is_docker():
+        username = os.getenv("INSTAGRAM_USERNAME")
+    else:
+        username = input("Enter Instagram's username: ")
     filename = "./config/logger.yaml"
     main(username, filename)

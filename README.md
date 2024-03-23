@@ -11,25 +11,46 @@ Instagram Crawler is a Python script that uses the `instaloader` module to downl
 ## Installation
 
 1. Clone this repository:
-   ```bash
-   git clone https://github.com/pnguyen215/instagram-crawler.git
-   ```
+
+```bash
+git clone https://github.com/pnguyen215/instagram-crawler.git
+```
+
 2. Install the required Python modules:
-   ```bash
-   pip3 install -r requirements.txt
-   ```
+
+```bash
+pip3 install -r requirements.txt
+```
+
 3. Upgrade the required Python modules:
-   ```bash
-   pip3 install --upgrade -r requirements.txt
-   ```
+
+```bash
+pip3 install --upgrade -r requirements.txt
+```
 
 ## Usage
 
 1. Run the script with the Instagram username as an argument:
-   ```bash
-   python3 main.py
-   ```
+
+```bash
+python3 main.py
+```
+
 2. When prompted, enter the Instagram username you want to download posts from.
+
+## Docker
+
+1. Build the Docker image
+
+```bash
+docker-compose build
+```
+
+2. Run the Docker container:
+
+```bash
+docker-compose up
+```
 
 ## Contributing
 

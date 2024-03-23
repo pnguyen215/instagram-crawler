@@ -6,3 +6,7 @@ package:
 	pip3 freeze > requirements_draft.txt
 upgrade:
 	pip3 install --upgrade -r requirements.txt
+docker-build:
+	docker-compose build
+docker-up:
+	docker-compose up

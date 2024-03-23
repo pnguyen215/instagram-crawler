@@ -1,0 +1,11 @@
+version: "3"
+services:
+  ins-crawler-container:
+    build: .
+    environment:
+      - INSTAGRAM_USERNAME=phuocnguyenit97
+    volumes:
+      - ./config:/ins-crawler-container/config # Mount config directory containing logger.yaml
+    # stdin_open: true # Keep stdin open, allows for entering username
+    # tty: true # Allocate a pseudo-TTY, required for input
+    command: ["sh", "-c", "python3 main.py && bash"] # Run the main.py script and start a bash shell
