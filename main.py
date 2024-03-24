@@ -5,11 +5,41 @@ import yaml
 import os
 import shutil
 
-ASSETS_DIR = "assets"
-IMAGES_DIR = "images"
-VIDEOS_DIR = "videos"
-CAPTIONS_DIR = "captions"
-PROFILES_DIR = "profiles"
+
+class Configs:
+    def __init__(self, filename):
+        self.filename = {}
+        self._load_config(filename)
+
+    def _load_config(self, filename):
+        with open(filename, "r") as f:
+            self.filename = yaml.safe_load(f)
+
+    def get(self, path: str, default=None, cast_type=None):
+        keys = path.split(".")
+        current_level = self.filename
+        for key in keys:
+            if key in current_level:
+                current_level = current_level[key]
+            else:
+                return self._cast_default(default, cast_type)
+        return self._cast_value(current_level, cast_type)
+
+    def _cast_default(self, default, cast_type):
+        if default is None:
+            return default
+        return self._cast_value(default, cast_type)
+
+    def _cast_value(self, value, cast_type):
+        if cast_type is None or value is None:
+            return value
+        try:
+            return cast_type(value)
+        except ValueError:
+            return value
+
+    def __repr__(self):
+        return str(self.filename)
 
 
 class Logger:
@@ -21,15 +51,42 @@ class Logger:
 
 
 class InstagramCrawler:
-    def __init__(self, username, logger: Logger):
+    def __init__(self, username: str, logger: Logger, config: Configs):
         self.username = username
         self.logger: Logger = logger
+        self.config: Configs = config
         self.ins = instaloader.Instaloader()
-        self.root_dir = ASSETS_DIR
-        self.image_dir = os.path.join(self.root_dir, username, IMAGES_DIR)
-        self.video_dir = os.path.join(self.root_dir, username, VIDEOS_DIR)
-        self.caption_dir = os.path.join(self.root_dir, username, CAPTIONS_DIR)
-        self.profile_dir = os.path.join(self.root_dir, username, PROFILES_DIR)
+        self.root_dir = self.config.get(
+            "directories.root", default="assets", cast_type=str
+        )
+        self.image_dir = os.path.join(
+            self.root_dir,
+            username,
+            self.config.get(
+                "directories.types.picture", default="images", cast_type=str
+            ),
+        )
+        self.video_dir = os.path.join(
+            self.root_dir,
+            username,
+            self.config.get(
+                "directories.types.video", default="videos", cast_type=str
+            ),
+        )
+        self.caption_dir = os.path.join(
+            self.root_dir,
+            username,
+            self.config.get(
+                "directories.types.caption", default="captions", cast_type=str
+            ),
+        )
+        self.profile_dir = os.path.join(
+            self.root_dir,
+            username,
+            self.config.get(
+                "directories.types.profile", default="profiles", cast_type=str
+            ),
+        )
 
     def create_directories(self):
         os.makedirs(self.image_dir, exist_ok=True)
@@ -76,6 +133,15 @@ class InstagramCrawler:
         except Exception as e:
             self.logger.logger.error("Error downloading posts: %s", e)
 
+    def execute(self):
+        enabled: bool = self.config.get("instagram.enabled", cast_type=bool)
+        if enabled:
+            username: str = self.config.get("instagram.username", cast_type=str)
+            password: str = self.config.get("instagram.password", cast_type=str)
+            self.download_posts_by_credentials_context(username, password)
+        else:
+            self.download_posts_by_username_context()
+
     def access_by_username_context(self):
         try:
             return instaloader.Profile.from_username(self.ins.context, self.username)
@@ -113,12 +179,12 @@ def is_docker():
     )
 
 
-def main(username, filename_logger):
-    logger = Logger(filename_logger)
-    logger.logger.info("Loading username %s profile...", username)
-    scraper = InstagramCrawler(username, logger)
+def main(username, filename_logger, filename_config):
+    scraper = InstagramCrawler(
+        username, Logger(filename_logger), Configs(filename_config)
+    )
     scraper.create_directories()
-    scraper.download_posts_by_username_context()
+    scraper.execute()
     scraper.clean_up()
 
 
@@ -127,5 +193,6 @@ if __name__ == "__main__":
         username = os.getenv("INSTAGRAM_USERNAME")
     else:
         username = input("Enter Instagram's username: ")
-    filename = "./config/logger.yaml"
-    main(username, filename)
+    filename_logger = "./config/logger.yaml"
+    filename_config = "./config/application.yaml"
+    main(username, filename_logger, filename_config)

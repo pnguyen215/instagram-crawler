@@ -161,5 +161,6 @@ cython_debug/
 #.idea/
 
 /assets
+/logs
 requirements_draft.txt
 .DS_Store

@@ -1,0 +1,17 @@
+########################
+# Config Instagram credentials
+########################
+instagram:
+  enabled: false
+  username: <username>
+  password: <password>
+########################
+# Config directories
+########################
+directories:
+  root: assets
+  types:
+    picture: images
+    video: videos
+    profile: profiles
+    caption: captions
