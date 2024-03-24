@@ -51,6 +51,8 @@ coverage.xml
 .pytest_cache/
 cover/
 .vscode/settings.json
+config/application.local.yaml
+config/logger.local.yaml
 
 # Translations
 *.mo
