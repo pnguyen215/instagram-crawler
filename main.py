@@ -21,9 +21,9 @@ class Logger:
 
 
 class InstagramCrawler:
-    def __init__(self, username, logger):
+    def __init__(self, username, logger: Logger):
         self.username = username
-        self.logger = logger
+        self.logger: Logger = logger
         self.ins = instaloader.Instaloader()
         self.root_dir = ASSETS_DIR
         self.image_dir = os.path.join(self.root_dir, username, IMAGES_DIR)
@@ -46,31 +46,45 @@ class InstagramCrawler:
                 if not os.path.exists(dst):
                     shutil.move(src, dst)
             except FileNotFoundError:
-                self.logger.error("File %s not found, skipping.", file)
+                self.logger.logger.error("File %s not found, skipping.", file)
             except Exception as e:
-                self.logger.error("Error moving file %s: %s", file, e)
+                self.logger.logger.error("Error moving file %s: %s", file, e)
 
-    def download_posts(self):
+    def download_posts_by_username_context(self):
         ctx = self.access_by_username_context()
-        if ctx:
-            try:
-                for post in ctx.get_posts():
-                    if post.is_video:
-                        self.ins.download_post(post, target=self.username)
-                        self.move_files(".mp4", self.video_dir)
-                    else:
-                        self.ins.download_post(post, target=self.username)
-                        self.move_files(".jpg", self.image_dir)
-                        self.move_files(".txt", self.caption_dir)
-                        self.move_files(".json.xz", self.profile_dir)
-            except Exception as e:
-                self.logger.error("Error downloading posts: %s", e)
+        if not ctx:
+            return
+        self.download_posts(ctx)
+
+    def download_posts_by_credentials_context(self, username, password):
+        ctx = self.access_by_credentials_context(username, password)
+        if not ctx:
+            return
+        self.download_posts(ctx)
+
+    def download_posts(self, ctx: instaloader.Profile):
+        try:
+            for post in ctx.get_posts():
+                if post.is_video:
+                    self.ins.download_post(post, target=self.username)
+                    self.move_files(".mp4", self.video_dir)
+                else:
+                    self.ins.download_post(post, target=self.username)
+                    self.move_files(".jpg", self.image_dir)
+                    self.move_files(".txt", self.caption_dir)
+                    self.move_files(".json.xz", self.profile_dir)
+        except Exception as e:
+            self.logger.logger.error("Error downloading posts: %s", e)
 
     def access_by_username_context(self):
         try:
             return instaloader.Profile.from_username(self.ins.context, self.username)
         except Exception as e:
-            self.logger.error("Error fetching by username: %s, %s", self.username, e)
+            self.logger.logger.error(
+                "Error fetching by username: %s, %s",
+                self.username,
+                e,
+            )
             return None
 
     def access_by_credentials_context(self, username, password):
@@ -78,11 +92,16 @@ class InstagramCrawler:
             self.ins.login(username, password)
             return instaloader.Profile.from_username(self.ins.context, self.username)
         except Exception as e:
-            self.logger.error("Error logging by username: %s, %s", username, e)
+            self.logger.logger.error("Error logging by username: %s, %s", username, e)
             return None
 
     def clean_up(self):
-        shutil.rmtree(self.username)
+        if os.path.exists(self.username):
+            shutil.rmtree(self.username)
+        else:
+            self.logger.logger.warning(
+                "Directory %s does not exist, nothing to remove.", self.username
+            )
 
 
 def is_docker():
@@ -99,7 +118,7 @@ def main(username, filename_logger):
     logger.logger.info("Loading username %s profile...", username)
     scraper = InstagramCrawler(username, logger)
     scraper.create_directories()
-    scraper.download_posts()
+    scraper.download_posts_by_username_context()
     scraper.clean_up()
 
 
