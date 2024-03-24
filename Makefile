@@ -12,5 +12,7 @@ docker-up:
 	docker-compose up
 local:
 	python3 main.py ./config/logger.local.yaml ./config/application.local.yaml $(username)
+prod:
+	python3 main.py ./config/logger.yaml ./config/application.yaml $(username)
 try:
 	./try.sh
