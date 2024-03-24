@@ -4,6 +4,7 @@ import logging.config
 import yaml
 import os
 import shutil
+import sys
 
 
 class Configs:
@@ -69,9 +70,7 @@ class InstagramCrawler:
         self.video_dir = os.path.join(
             self.root_dir,
             username,
-            self.config.get(
-                "directories.types.video", default="videos", cast_type=str
-            ),
+            self.config.get("directories.types.video", default="videos", cast_type=str),
         )
         self.caption_dir = os.path.join(
             self.root_dir,
@@ -134,7 +133,9 @@ class InstagramCrawler:
             self.logger.logger.error("Error downloading posts: %s", e)
 
     def execute(self):
-        enabled: bool = self.config.get("instagram.enabled", cast_type=bool)
+        enabled: bool = self.config.get(
+            "instagram.enabled", default=False, cast_type=bool
+        )
         if enabled:
             username: str = self.config.get("instagram.username", cast_type=str)
             password: str = self.config.get("instagram.password", cast_type=str)
@@ -188,7 +189,7 @@ def main(username, filename_logger, filename_config):
     scraper.clean_up()
 
 
-if __name__ == "__main__":
+def execute():
     if is_docker():
         username = os.getenv("INSTAGRAM_USERNAME")
     else:
@@ -196,3 +197,17 @@ if __name__ == "__main__":
     filename_logger = "./config/logger.yaml"
     filename_config = "./config/application.yaml"
     main(username, filename_logger, filename_config)
+
+
+def execute_with_args():
+    if len(sys.argv) != 4:
+        print("Usage: python3 main.py <filename_logger> <filename_config> <username>")
+        sys.exit(1)
+    filename_logger = sys.argv[1]
+    filename_config = sys.argv[2]
+    username = sys.argv[3]
+    main(username, filename_logger, filename_config)
+
+
+if __name__ == "__main__":
+    execute_with_args()

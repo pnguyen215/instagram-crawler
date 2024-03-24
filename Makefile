@@ -10,3 +10,7 @@ docker-build:
 	docker-compose build
 docker-up:
 	docker-compose up
+local:
+	python3 main.py ./config/logger.local.yaml ./config/application.local.yaml $(username)
+try:
+	./try.sh
