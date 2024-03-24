@@ -5,6 +5,12 @@ import yaml
 import os
 import shutil
 
+ASSETS_DIR = "assets"
+IMAGES_DIR = "images"
+VIDEOS_DIR = "videos"
+CAPTIONS_DIR = "captions"
+PROFILES_DIR = "profiles"
+
 
 class Logger:
     def __init__(self, filename_logger):
@@ -19,12 +25,11 @@ class InstagramCrawler:
         self.username = username
         self.logger = logger
         self.ins = instaloader.Instaloader()
-        self.profile = instaloader.Profile.from_username(self.ins.context, username)
-        self.root_dir = "assets"
-        self.image_dir = os.path.join(self.root_dir, username, "images")
-        self.video_dir = os.path.join(self.root_dir, username, "videos")
-        self.caption_dir = os.path.join(self.root_dir, username, "captions")
-        self.profile_dir = os.path.join(self.root_dir, username, "profiles")
+        self.root_dir = ASSETS_DIR
+        self.image_dir = os.path.join(self.root_dir, username, IMAGES_DIR)
+        self.video_dir = os.path.join(self.root_dir, username, VIDEOS_DIR)
+        self.caption_dir = os.path.join(self.root_dir, username, CAPTIONS_DIR)
+        self.profile_dir = os.path.join(self.root_dir, username, PROFILES_DIR)
 
     def create_directories(self):
         os.makedirs(self.image_dir, exist_ok=True)
@@ -46,15 +51,35 @@ class InstagramCrawler:
                 self.logger.error("Error moving file %s: %s", file, e)
 
     def download_posts(self):
-        for post in self.profile.get_posts():
-            if post.is_video:
-                self.ins.download_post(post, target=self.username)
-                self.move_files(".mp4", self.video_dir)
-            else:
-                self.ins.download_post(post, target=self.username)
-                self.move_files(".jpg", self.image_dir)
-                self.move_files(".txt", self.caption_dir)
-                self.move_files(".json.xz", self.profile_dir)
+        ctx = self.access_by_username_context()
+        if ctx:
+            try:
+                for post in ctx.get_posts():
+                    if post.is_video:
+                        self.ins.download_post(post, target=self.username)
+                        self.move_files(".mp4", self.video_dir)
+                    else:
+                        self.ins.download_post(post, target=self.username)
+                        self.move_files(".jpg", self.image_dir)
+                        self.move_files(".txt", self.caption_dir)
+                        self.move_files(".json.xz", self.profile_dir)
+            except Exception as e:
+                self.logger.error("Error downloading posts: %s", e)
+
+    def access_by_username_context(self):
+        try:
+            return instaloader.Profile.from_username(self.ins.context, self.username)
+        except Exception as e:
+            self.logger.error("Error fetching by username: %s, %s", self.username, e)
+            return None
+
+    def access_by_credentials_context(self, username, password):
+        try:
+            self.ins.login(username, password)
+            return instaloader.Profile.from_username(self.ins.context, self.username)
+        except Exception as e:
+            self.logger.error("Error logging by username: %s, %s", username, e)
+            return None
 
     def clean_up(self):
         shutil.rmtree(self.username)
